@@ -4,6 +4,7 @@
 #include <vector>
 
 const int QtreeParametr = 10;
+const int maxN = 1e6;
 const double eps = 1e-10;
 const double eps_min_rect = 1e-2;
 using namespace std;
@@ -21,15 +22,13 @@ struct Rectangle {
     p1-----+
     */ 
     Point p1, p2;
-    int index;
     int color;
     Rectangle() {
         this->color = 0;
     }
-    Rectangle(Point p1, Point p2, int index, int color) {
+    Rectangle(Point p1, Point p2, int color) {
         this->p1 = p1;
         this->p2 = p2;
-        this->index = index;
         this->color = color;
     }
     double sqare() {
@@ -85,14 +84,16 @@ typedef Vertex * pvertex;
 Sircle big_boss;
 Sircle cross_big_boss;
 void insert(pvertex root, Rectangle toAdd) {
+    //если текущуя вершина никак не пересекается с данным прямоугольником
     if (!IsRectCrossRect(root->self, toAdd)) return;
 
+    //в первспективе хранить тут массив цветов, в которые покаршен текущий прямоугольник
     if (root->self.color != 0) {
         //текущий прямоугольник уже покрашен во что-то
         return;
     }
     if (root->sqare() < eps_min_rect) {
-        //если площадь текущего прямоугольника маленькая, забить хуй на нее
+        //если площадь текущего прямоугольника маленькая, забить хуй на него
         return;
     }
     if (UR == NULL) {
@@ -100,12 +101,26 @@ void insert(pvertex root, Rectangle toAdd) {
         if (IsRectInsideCircle(root->self, big_boss) && IsRectInsideCircle(root->self, cross_big_boss)) {
             //прямоугольник лежит внутри обеих окружностей
             root->color = cross_big_boss->index;   
+            return;
+        } else {
+            //иначе надо хитрить с его детьми
+            double half_width  = (root->self.p2.x - root->self.p1.x) / 2;
+            double half_height = (root->self.p2.y - root->self.p1.y) / 2;
+            root->UR = new Vertex(Rectangle( Point( root->self.p1.x + half_width, root->self.p1.y + half_height), root->self.p2), root->color);
+            root->UL = new Vertex(Rectangle( Point( root->self.p1.x, root->self.p1.y + half_height), Point( root->self.p2.x - half_width, root->self.p2.y)), root->color);
+            root->DR = new Vertex(Rectangle( Point( root->self.p1.x + half_width, root->self.p1.y), Point( root->self.p2.x, root->self.p1.x + half_height)), root->color);
+            root->DL = new Vertex(Rectangle( root->self.p1, Point( root->self.p1.x + half_width, root->self.p1.y + half_height)), root->color); 
         }
     }
-
+    //идем в детей
+    insert(root->UR, toAdd);
+    insert(root->UL, toAdd);
+    insert(root->DR, toAdd);
+    insert(root->DL, toAdd);
 }
 
 double findBorder(Sircle A, Sircle B, double l, double r, bool byX) {
+    //бинпоиском ищем границу
     double mid;
     while (fabs(r - l) > eps) {
         mid = (r + l) / 2;
@@ -121,6 +136,7 @@ double findBorder(Sircle A, Sircle B, double l, double r, bool byX) {
 }
 
 double * findBorders(Sircle A, Sircle B, Point p1, Point p2) {
+    //ищет касающийся прямоугольник
     double * res = (double*) malloc(sizeof(double) * 4);
     /*
     +----0----+
@@ -137,6 +153,66 @@ double * findBorders(Sircle A, Sircle B, Point p1, Point p2) {
     return res;
 }
 
+////////////////////////
+
+Sicle circles[maxN];
+
+//////////////////////
+
 int main(void) {
+    FILE * circles_file = fopen("input", "r");
+    FILE * config = fopen("config", "r");
+    int is_debug = 0;
+    if (config) {
+        fscanf(config, "%d", &is_debug);
+    }
+    if (!circles_file) cerr << "No file \"input\"";
+    double x, y, r;
+    int n = 0;
+    if (is_debug) {
+        cout << "Start read" << endl;
+    }
+    while (fscanf(circles_file, "%lf %lf %lf", &x, &y, &r)) {
+        circles[n] = Sircle( Point(x, y), r);
+        n++;
+    }
+    if (is_debug) {
+        cout << "Read end" << endl;
+    }
+    int id;
+    //для разных типов запросов
+    char type;
+    pair<bool, pair <Point, Point> *> cross_res;
+    if (is_debug) {
+        cout << "Type id of circle" << endl;
+    }
+    double * borders;
+    Rectangle toAdd;
+    Vertex * color_tree;
+    double zapac = 5;
+    while (1) {
+        scanf("%d", &id);
+        big_boss = circles[id];
+        color_tree = new Vertex( Rectangle( Point(circle[id].centr.x - circle[id].r - zapac, circle[id].centr.y - circle[id].r - zapac),
+                                            Point(circle[id].centr.x + circle[id].r + zapac, circle[id].centr.y + circle[id].r + zapac)), 0); 
+        for (int i = 0; i < n; i++) {
+            if (i != id) {
+                cross_res = crossSircle(circles[id], circles[i]);
+                if (cross_res.first) {
+                    cross_big_boss = circles[i];
+                    if (cross_res.second) {
+                        borders = findBorders(circles[id], circles[i], cross_res.second->first, cross_res.second->second);
+                        toAdd = Rectangle( Point(borders[3], borders[2]), Point(borders[1], borders[0]));
+                        insert(color_tree, toAdd);
+                    } else {
+                        borders = (double
+                    }
+                }
+            }
+        }
+    }
+
+    
+
     return 0;
 }
