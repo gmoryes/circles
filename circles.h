@@ -19,16 +19,13 @@ struct Point {
     }
 };
 
-struct Sircle {
+struct Circle {
     Point centr;
     double r;
-    double preArea;
-    int start_x, start_y, end_x, end_y;
-    Sircle() {};
-    Sircle (Point a, double r) {
+    Circle() {};
+    Circle (Point a, double r) {
         this->centr = a;
         this->r = r;
-        this->preArea = 0;
     }
 };
 
@@ -48,12 +45,12 @@ double scalar_vector(Point a, Point b) {
 	return (a.x * b.x + a.y * b.y);
 }
 
-pair<bool, pair <Point, Point> *> crossSircle(Sircle a, Sircle b, bool only_check) {
+pair<bool, pair <Point, Point> *> crossCircle(Circle a, Circle b, bool only_check) {
 	double q = dist2(a.centr, b.centr);
 	double q1 = a.r * a.r + b.r * b.r + 2.0 * a.r * b.r;
 	double q3 = (a.r - b.r) * (a.r - b.r);
     if (dist2(a.centr, b.centr) >= a.r * a.r + b.r * b.r + 2.0 * a.r * b.r) {
-        //if sircles (*)...(*)
+        //if Circles (*)...(*)
         return make_pair(false, (pair<Point, Point> *) NULL);
     } else if (dist2(a.centr, b.centr) <= (a.r - b.r) * (a.r - b.r)) {
 		//dist + r_min <= r_max, dist <= r_max - r_min, dist2 <= r_max*r_max - 2*r_max*r_min + r_min*r_min = (r_min - r_max)^2
@@ -74,4 +71,16 @@ pair<bool, pair <Point, Point> *> crossSircle(Sircle a, Sircle b, bool only_chec
     res->first = middle + height;
     res->second = middle - height;
     return make_pair(true, res);
+}
+
+bool IsPointInCircle(Circle a, Point p) {
+	return (fabs(dist2(a.centr, p) - a.r*a.r) < eps);
+}
+
+bool IsPointEqualPoint(Point a, Point b) {
+	return (fabs(a.x - b.x) < eps && fabs(a.y - b.y) < eps);
+}
+
+bool IsPointInsideCirle (Circle a, Point p) {
+    return dist2(a.centr, p) < a.r * a.r;
 }
